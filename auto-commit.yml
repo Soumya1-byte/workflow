@@ -1,0 +1,64 @@
+name: Realistic Auto Commit Bot (Randomized, IST)
+
+on:
+  schedule:
+    - cron: "30 18 * * *"   # Runs at 12:00 AM IST (IST = UTC+5:30)
+  workflow_dispatch:
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Run realistic random commits
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config --global user.name "AutoCommit Bot"
+          git config --global user.email "bot@example.com"
+
+          echo "Starting realistic, random commit simulation..."
+
+          # RANDOM number of commits (3 to 10)
+          NUM_COMMITS=$(( (RANDOM % 8) + 3 ))
+          echo "Today's commit count: $NUM_COMMITS"
+
+          # Arrays of realistic commit messages
+          messages=("refactor: cleanup unused code"
+                    "fix: updated logic in utils"
+                    "chore: minor file updates"
+                    "docs: updated documentation"
+                    "style: improve formatting"
+                    "feat: add placeholder module"
+                    "update timestamps"
+                    "temporary changes for debugging")
+
+          # Loop through random number of commits
+          for ((i=1; i<=NUM_COMMITS; i++))
+          do
+            # RANDOM WAIT between commits (1–45 minutes)
+            WAIT=$(( (RANDOM % 45) + 1 ))
+            echo "Sleeping $WAIT minutes before commit $i..."
+            sleep ${WAIT}m
+
+            # Choose random commit message
+            MSG=${messages[$RANDOM % ${#messages[@]}]}
+
+            # Randomly choose a file to modify or create
+            FILE_NUMBER=$(( (RANDOM % 5) + 1 ))
+            FILE="file_${FILE_NUMBER}.txt"
+
+            echo "Commit $i at $(date)" >> $FILE
+
+            git add $FILE
+            git commit -m "$MSG ($(date))"
+
+            git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} HEAD:main
+
+            echo "Commit $i completed!"
+          done
+
+          echo "All $NUM_COMMITS commits done for today!"
